@@ -1,5 +1,5 @@
 Modelo,RMSE
 01_RLS_lstat,5.76
 02_RLS_rm,5.56
-03_RLM_todas,4.32
-05_RLM_2vars,4.63
+03_RLM_12vars,4.32
+04_RLM_2vars,4.63
