@@ -142,17 +142,15 @@ summary(lm_mi4vars)
 
 En este modelo se incluye una de las variables categóricas: *chas*. De los modelos presentados es el que entrega el mayor valor de R cuadrado ajustado: 0.81, esto es, el modelo explica en un 81% el comportamiento de la variable *medv*. Adicionalmente, el error estándar residual es de 4.07 el dato más bajo observado hasta el momento. En cuanto al modelo definitivo, los coeficientes estimados no presentan significancia para todas las variables o interacción entre ellas. Si se plantea un nivel de confianza del 95%, 11 de los 15 coeficientes del modelo podrían considerarse igual a cero: lstat \* chas*,* rm \* chas, lstat \* rm \* chas, lstat \* ptratio \* chas, lstat \* rm \* ptratio \* chas, esto es, se excluyen del modelo.
 
-$$
-medv = 8.16695*lstat + 40.27241*rm + 11.53867*ptratio - 204.61419chas - 1.25939*lstat*rm
-$$
+Con base en lo anterior se plantea nuevamente el modelo excluyendo las interacciones mencionadas (cabe resaltar que en este caso el modelo deja de ser de 4 variables y se convierte en un modelo de 3 variables)
 
-$$
--0.35211*lstat*ptratio -1.74752*rm*ptratio+13.90197*ptratio*chas
-$$
-
-$$
-+0.04283*lstat*rm*ptratio-1.55780rm*ptratio*chas-233.75030 
-$$
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+lm_mi4vars <- lm(data = Train, medv~lstat+rm+ptratio+chas+
+                   rm*ptratio+
+                   ptratio*chas+
+                   rm*ptratio*chas)
+summary(lm_mi4vars)
+```
 
 La comparación de las predicciones frente a los valores reales de la variable independiente medv se presentan en la siguiente gráfica
 
@@ -228,7 +226,7 @@ Los modelos presentan una tendencia similar, siendo el de dos variables el que p
 
 Se calculan tres nuevos valores de RMSE, esta vez para los modelos de regresión múltiple con interacción expuestos en esta sección, igual, se comparán con los resultados RMSE de los modelos ya estudiados.
 
-El RMSE del modelo con interacción de 2 variables se calcula en 4.18, el del modelo con interacción de 3 variables se observa en 3.99 mientras que el de 4 variables alcanza un valor de 3.46. Las diferencias del primer y segundo modelo en relación con el tercero empieza a ser significante pues son de 500 dólares y 700 dólares respectivamente.
+El RMSE del modelo con interacción de 2 variables se calcula en 4.18, el del modelo con interacción de 3 variables se observa en 3.99 mientras que el de 4 variables alcanza un valor de 3.89.
 
 A medida que en los modelos se aumenta el número de variables, el RMSE calculado con el conjunto de datos Test disminuye. Al comparar estos nuevos resultados con los modelos planteados en las secciones anteriores se observa ya una reducción singificativa en el error (ya alcanza los 2300 dólares). Un menor valor de RMSE implica un modelo más complejo.
 

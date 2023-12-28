@@ -50,24 +50,28 @@ Uno aspecto importante a resaltar es el modelo incluye dos variables categórica
 
 -   rad: toma nueve niveles, 24, 8, 7, 6, 5, 4, 3, 2, 1. El modelo incluye las variables rad1 a rad8. De estas, rad3, rad7 y rad8, presentan p-valores altos por lo que las mismas se pueden excluir del modelo definitivo
 
+En este orden de ideas, el modelo con la exclusión de las variables ya mencionadas sería:
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-coeficientes_full <- as.data.frame(resumen_full$coefficients)
-coeficientes_full <- rownames_to_column(coeficientes_full)
-modelo_full <- data.frame(coeficientes_full[,1][coeficientes_full$`Pr(>|t|)`<0.05],
-                          coeficientes_full[,2][coeficientes_full$`Pr(>|t|)`<0.05])
-names(modelo_full) <- c("Variable", "Coeficiente Estimado")
-knitr :: kable(modelo_full)
+Dataset <- rbind(Train,Test)
+X <- as.data.frame(model.matrix(medv~., Dataset)[,-1])
+Dataset <- data.frame(X,medv=Dataset[,13])
+Dataset <- Dataset[,-c(3,7,11,13,16)]
+Train_mod <- Dataset[1:405,]
+Test_mod <- Dataset[406:506,]
 ```
 
-La predicción de los resultados de medv para el conjunto de datos Test comparados con los valores reales se verían de la siguiente manera
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+lm_full<-lm(medv~.,data=Train_mod)
+resumen_full <- summary(lm_full)
+resumen_full
+```
+
+La exclusión de las variables no presenta cambios relevantes en el error estándar residual ni en el coeficiente de R cuadrado ajustado. Con los coeficientes definitivos, la predicción de la variable dependiente *medv* para el conjunto de datos Test comparados con los valores reales se verían de la siguiente manera
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-p_full <- predict(lm_full,Test)
-data_reg <- cbind(Test,round(p_full,1))
-nombres <- names(Test) 
-nombres <- c(nombres,"medv_predict_full")
-names(data_reg) <-nombres 
-rm(nombres)
+p_full <- predict(lm_full,Test_mod)
+data_reg <- data.frame(Test,medv_predict_full=round(p_full,1))
 data_reg<- arrange(data_reg,medv)
 data_reg$Obs <- rep(1:nrow(Test))
 data_reg<- data_reg %>% relocate(Obs,.before = crim)
@@ -91,7 +95,7 @@ fig_rlmfull <- fig_rlmfull %>% layout(title = list(text ='Regresión lineal múl
 fig_rlmfull
 ```
 
-La diferencia más relevante en el la regresión lineal múltiple, que incluye las 12 variables independientes, se observa para valores *medv* que son superiores a 29, rango en el que el modelo tiende a predecir valores menores que lo datos reales. Para los demás rangos de datos los resultados de la predicción tienden a mantenerse cerca de los valores reales, aunque se presentan algunas rachas, en especial, por encima de los valores reales (para valores *medv* reales entre 23.3 y 24.5).
+La diferencia más relevante en el la regresión lineal múltiple (que incluye las 10 variables independientes por la exclusión de 2 de estas dados los p-valores) se observa para valores reales de *medv* que son superiores a 29, ya que en este rango el modelo tiende a predecir valores menores que lo datos reales. Para los demás rangos de datos los resultados de la predicción tienden a mantenerse cerca de los valores reales, aunque se presentan algunas rachas, en especial, por encima de los valores reales (para valores *medv* reales entre 23.3 y 24.5).
 
 Cabe resaltar que el modelo lineal no es posible presentarlo gráficamente debido a la cantidad de variables.
 
@@ -141,7 +145,7 @@ fig_rlm2v # Mostrar gráfico
 
 Como se ha observado hasta el momento, para cada una de las regresiones lineales, los modelos presentan dificultades en la predicción de valores de *medv* que tienen valores reales altos, en la gráfica se pueden detectar que los valores *medv* reales superiores a 41 tienen predicciones inferiores, esto es, valores alrededor de 10 por debajo del real.
 
-### 3.4 Comparación de regresiones lineales múltiples
+### 3.3 Comparación de regresiones lineales múltiples
 
 La comparación de los dos modelos planteados en esta parte del documento se observa en la siguiente gráfica
 
@@ -172,7 +176,7 @@ fig_rlm
 
 Los dos modelos no reflejan diferencias significativas en su predicción, sin embargo, en cuanto al modelo de dos variables parece tener un mejor desempeño en las predicciones para valores reales de *medv* menores a 37 mientras que las predicciones superiores a este valor tienen resultados ligeramente más alejados de los valores reales en comparación con el modelo que incluye todas las variables. Cabe resaltar que estas conclusiones se soportan en la percepción visual que brinda la gráfica. La cuantificación de la "calidad" en las predicciones se presentará con el cálculo del RMSE.
 
-#### **3.4.1 Cálculo del RMSE**
+#### **3.3.1 Cálculo del RMSE**
 
 Se calculan tres valores de RMSE, uno para cada expuesto, que a su vez se compararán con los ya calculados para los modelos de regresión lineal simple de la parte 2 de este documento.
 

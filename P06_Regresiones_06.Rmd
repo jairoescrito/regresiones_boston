@@ -1,5 +1,5 @@
 ---
-title: "P06_Regresiones_06"
+title: "COMPARACIÓN DE RESULTADOS DE MODELOS DE REGRESIÓN"
 author: "Jairo Sánchez"
 date: "2023-12-26"
 output: html_document
@@ -28,11 +28,11 @@ RMSE_5 <- read_csv("RMSE_4.csv")
 ```
 ## Introducción
 
-Hasta el momento, todos los modelos planteados son lineales, es decir, se ha intentado explicar el comportamiento de la variable de respuesta con una línea recta. Con base en los detalles observados gráficamente en los modelos de regresión lineal simple y regresión lineal múltiple de dos variables además de los resultados comparativos del RMSE, se podría plantear que la variabilidad de la variable de respuesta obedece a un modelo no lineal cuadrático. En esta parte del documento se plantearan varios modelos cuadráticos: dos con una única variable, uno con interacción de dos variables, uno con interacción de tres variables y el último con interacción de cuatro variables.
+Hasta el momento, todos los modelos planteados son lineales, es decir, se ha intentado explicar el comportamiento de la variable de respuesta con una línea recta. Con base en los detalles observados gráficamente en los modelos de regresión lineal simple y regresión lineal múltiple, además de los resultados comparativos del RMSE, se podría plantear que la variabilidad de *medv* obedece a un modelo no lineal cuadrático. En esta parte del documento se plantean varios modelos cuadráticos: dos con una única variable, uno con interacción de dos variables, uno con interacción de tres variables y el último con interacción de cuatro variables. Esto con el fin de validar si efectivamente la variable de respuesta se ajusta de mejor manera a una regresión polinómica grado 2.
 
-### 6.1. Regresiones polinómicas cuadráticas con una variable
+### **6.1. Regresiones polinómicas cuadráticas con una variable**
 
-Las dos variables con mayor nivel de correlación (observadas en la primera parte del documento) son *lstat* y *rm* para estas dos variables se plantearán modelos los modelos mencionados
+Las dos variables con mayor nivel de correlación (observadas en la primera parte del documento) son *lstat* y *rm* para estas dos variables se plantearán dos modelos cuadráticos.
 
 #### **6.1.1 Regresión cuadrática con *lstat* como variable independiente**
 
@@ -49,13 +49,13 @@ lmpoly_lstat <-lm(medv~lstat+I(lstat^2),data = Train)
 summary(lmpoly_lstat)
 ```
 
-El modelo presenta un error estándar residual de 5.51 el cual es menor que el valor del mismo error para la regresión lineal simple, así mismo el valor de R cuadrado ajustado, de esto se concluye que el modelo cuadrático con *lstat* explica de mejor manera la variabilidad de *medv* en comparación con el modelo de regresión lineal simple con la misma variable independiente.
+El modelo presenta un error estándar residual de 5.51 el cual es menor que el valor del mismo error para la regresión lineal simple, así mismo el valor de R cuadrado ajustado es mayor en este caso. Es posible concluirque el modelo cuadrático con *lstat* explica de mejor manera la variabilidad de *medv* en comparación con el modelo de regresión lineal simple con la misma variable independiente.
 
 $$
  medv = 43.48 - 2.41 * lstat + 0.04 *(lstat)²
 $$
 
-Usando los datos de evaluación del modelo, los resultados se observan así:
+Usando la ecuación descrita, los resultados de la predicción de la variable dependiente se observan así:
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 lmpoly_lstat.p <- predict(lmpoly_lstat,Test)
@@ -84,7 +84,7 @@ Al igual que los modelos estudiados hasta el momento, el modelo cuadrático con 
 
 #### **6.1.2 Regresión cuadrática con *rm* como variable independiente**
 
-De manera similar, el modelo cuadrático con la variable independiente *rm* tiene la siguiente forma
+El modelo cuadrático con la variable independiente *rm* tiene la siguiente forma
 
 $$
  medv = \beta_0 +\beta_1*rm + \beta_2*(rm)²
@@ -97,13 +97,13 @@ lmpoly_rm <-lm(medv~rm+I(rm^2),data = Train)
 summary(lmpoly_rm)
 ```
 
-En este caso el error estándar residual es de 6.36, que es un poco menor que el observado en la regresión lineal simple, en el caso del R cuadrado ajustado también tiene una leve mejoría, de esto se concluye inicialmente que el modelo cuadrático con rm es relativamente mejor que el lineal. Cabe resaltar que al comparar los resultados de este modelo con el cuadrático para la variable lstat los resultados no se observan mejores pues el error cuadrático medio es mayor y el valor de R cuadrado ajustado es menor.
+En este caso el error estándar residual es de 6.36, que es un poco menor que el observado en la regresión lineal simple, en el caso del R cuadrado ajustado también tiene una leve mejoría, de esto se concluye inicialmente que el modelo cuadrático con *rm* es relativamente mejor que el lineal. Cabe resaltar que al comparar los resultados de este modelo con el cuadrático para la variable lstat ,los resultados no se observan mejores pues el error cuadrático medio es mayor y el valor de R cuadrado ajustado es menor.
 
 $$
  medv = 70.63 - 24.21 * rm + 2.60 *(rm)²
 $$
 
-Con el modelo anterior, las predicciones se observan así:
+Con esta ecuación, las predicciones se observan así:
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 lmpoly_rm.p <- predict(lmpoly_rm,Test)
@@ -128,11 +128,11 @@ fig_RNL2_rm <- fig_RNL2_rm %>% layout(title = list(text ='Regresión polinómica
 fig_RNL2_rm
 ```
 
-Gráficamente se puede observar que los resultados de la predicción tienden a estar "centrados" respecto a la dispersión de los datos reales, adicionalmente en esta dispersión existen puntos considerablemente distantes de la concentración, situación que aumenta el error del modelo, por ejemplo para el valor de rm de 6.68 el valor medv es de 50 y la predicción es un valor cercano a 25.
+Gráficamente se puede observar que los resultados de la predicción tienden a estar "centrados" respecto a la dispersión de los datos reales, adicionalmente en esta dispersión existen puntos considerablemente distantes de la concentración, situación que aumenta el error del modelo, por ejemplo para el valor de rm de 6.68 el valor *medv* es de 50 y la predicción es un valor cercano a 25.
 
 ### 6.2. Regresiones polinómicas cuadráticas con múltiples variables
 
-En esta sección se plantean tres modelos grado 2 con más de una variable. El primero con dos variables: rm y lstat, el segundo con tres variables: rm,lstat y ptratio, y el último con las variables rm,lstat, ptratio y chas0.
+En esta sección se plantean tres modelos grado 2 con más de una variable. El primero con dos variables: *rm* y *lstat*, el segundo con tres variables: *rm*, *lstat* y *ptratio*, y el último con las variables *rm*, *lstat*, *ptratio* y *chas0*.
 
 #### **6.2.1 Regresión cuadrática con *lstat* y *rm* como variables independientes**
 
@@ -162,7 +162,7 @@ lmpoly_2vars <-lm(medv~rm+I(lstat*rm)+I(lstat^2)+I(rm^2),data = Train)
 summary(lmpoly_2vars)
 ```
 
-La exclusión de la variable genera un modelo menos complejo (al exclucir una variable), y resultados prácticamente iguales en cuando al valor del error estándar residual y el coeficiente R cuadrado ajustado.
+La exclusión de la variable genera un modelo menos complejo (menos variables), y resultados prácticamente iguales en cuanto al valor del error estándar residual y el coeficiente R cuadrado ajustado.
 
 De los tres modelos evaluados hasta el momento, este es el que presenta el menor error estándar residual y el mayor coeficiente de R cuadrado ajustado. Con los coeficientes calculados, la ecuación de la regresión polinómica con dos variables se establece así:
 
@@ -192,7 +192,7 @@ fig_RNL2_2vars <- fig_RNL2_2vars %>% layout(title = list(text ='Regresión polin
 fig_RNL2_2vars
 ```
 
-Los datos de la proyección de la variable *medv (en naranja)* parecen representar la dispersión de los valores reales de medv (en azul) de manera más cercana,en todo, de la "precisión" en las predicciones puede cuantificarse con el calculo del RMSE que se presentará más adelante.
+Los datos de la proyección de la variable *medv (en naranja)* parecen representar la dispersión de los valores reales de *medv* (en azul) de manera más cercana, en todo caso, la "precisión" en las predicciones puede cuantificarse con el calculo del RMSE que se presentará más adelante.
 
 #### **6.2.2 Regresión cuadrática con *lstat*, *rm y ptratio* como variables independientes**
 
@@ -276,7 +276,7 @@ lmpoly_4vars <-lm(medv~lstat+rm+ptratio+chas0+I(lstat*rm*ptratio*chas0)+I(lstat^
 summary(lmpoly_4vars)
 ```
 
-Como resultado de este planteamiento -con la inclusión de una de las variables categóricas (chas)-, se generan un modelo que "habilita" únicamente dos variables y el modelo obtenido se asemeja al obtenido en el punto 6.2.1 de este documento. Los p-valor orientan el planteamiento de un nuevo modelo, el cual incluiría las variables rm y lstat y sus pares cuadráticos sin incluir la interacción entre las mismas.
+Como resultado de este planteamiento -con la inclusión de una de la variable categórica (chas)-, se generan un modelo que "habilita" únicamente dos variables y el modelo obtenido se asemeja al obtenido en el punto 6.2.1 de este documento. Los p-valor orientan el planteamiento de un nuevo modelo, el cual incluiría las variables rm y lstat y sus pares cuadráticos sin incluir la interacción entre las mismas.
 
 $$
  medv = \beta_0 +\beta_1*lstat+\beta_2*rm+\beta_3*(lstat)^2+\beta_4*(rm)²
@@ -289,9 +289,9 @@ lmpoly_4vars <-lm(medv~lstat+rm+I(lstat^2)+I(rm^2),data = Train)
 summary(lmpoly_4vars)
 ```
 
-Este resultado genera un error estándar residual mayor en 0.3 unidades (aproximadamente) respecto al modelo con 4 variables y un R cuadrado ajustado menor en en 0.3 unidades. Si bien estos resultados parecieran menos favorables, los cambios no son significantes mientras que se observa una considerable reducción en la complejidad del modelo. Así mismo, si se compara con el modelo expuesto en el numeral 6.2.1 existe un aumento de 0.1 unidades en el error estándar residual y una reducción de 0.01 unidades en el coeficiente de R cuadrado ajustado, resultados que evidencian que ambos modelos de dos variables presentan resultados prácticamente iguales.
+Este resultado genera un error estándar residual mayor en 0.3 unidades (aproximadamente) respecto al modelo con 4 variables y un R cuadrado ajustado menor en en 0.03 unidades. Si bien estos resultados parecieran menos favorables, los cambios no son significantes si se considera la reducción en la complejidad del modelo. Así mismo, si se compara con el modelo expuesto en el numeral 6.2.1 existe un aumento de 0.1 unidades en el error estándar residual y una reducción de 0.01 unidades en el coeficiente de R cuadrado ajustado, resultados que evidencian que ambos modelos de dos variables presentan resultados prácticamente iguales.
 
-La ecuación conlos coeficientes calculados quedaría así:
+La ecuación con los coeficientes calculados quedaría así:
 
 $$
  medv = 100.62 -1.53*lstat-24.26*rm+0.02*(lstat)^2+2.21*(rm)^2
@@ -377,7 +377,7 @@ RMSE_5[,1] <- c("01_RLS_lstat","02_RLS_rm","03_RLM_12vars"
                 "13_RNL2_3vars", "14_RNL2_2vars(2)")
 ```
 
-Se calculas 5 valores de RMSE (para 5 modelos) que presentan resultados entre 4.02 y 5.58, valores que no son menores a los que han presentado modelos de regresión lineal. De lo anterior se puede concluir que los modelos de polinómicos grado dos no generan una explicación de la variabilidad del precio de las casas en Boston mejor a la alcanzada ya con un modelo de regresión lineal multiple con interacciones, pese a esto, es de anotar que algunos de los modelos planteados en el capítulo si presentan mejores resultados con otros modelos lineales. El modelo de regresión cuadrática que incluye tres variables (*lstat*, *rm* y *ptratio*) tienen el RMSE más bajo, siendo este de 4.02, el cual tiene una diferencia de alrededor de 0.56 frente al valor de RMSE observado hasta este capítulo (que representan una diferencia de 560 dólares).
+Se calculas 5 valores de RMSE (para 5 modelos) que presentan resultados entre 4.02 y 5.58, valores que no resultan menores al modelo de regresión lineal múltiple con interacciones de 4 variables. De lo anterior se puede concluir que los modelos de polinómicos grado dos no son más adecuado para generan una explicación de la variabilidad del precio de las casas en Boston, es decir, no presentan un resultado mejor. Es de anotar que algunos de los modelos planteados en el capítulo si presentan mejores resultados a otros modelos lineales. El modelo de regresión cuadrática que incluye tres variables (*lstat*, *rm* y *ptratio*) tienen el RMSE más bajo, siendo este de 4.02.
 
 Al final de este capítulo se han planteado 14 modelos de regresión, los resultados del RMSE de estos 14 se observa así
 
