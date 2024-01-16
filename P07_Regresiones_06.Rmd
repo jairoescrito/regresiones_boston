@@ -1,0 +1,295 @@
+---
+title: "COMPARACIÓN DE RESULTADOS DE MODELOS DE REGRESIÓN"
+author: "Jairo Sánchez"
+date: "2023-12-26"
+output: html_document
+---
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse) # Librería para ordenamiento de arreglos de datos, incluye ggplot2
+library(Metrics) # Librería para calculo de métricas de evaluación valores reales vs valores predichos
+library(plotly) # gráficos interactivos
+library(cowplot) # Grid de gráficos
+library(gam) # Librería para modelos aditivos generalizados
+library(knitr) # Libería para crear tablas en archivos Knit html# gráficos interactivos
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Carga de datos actualizados en la parte anterior
+Train <- as.data.frame(read_csv("Train.csv", col_types = cols(chas = col_factor()
+                                                , rad = col_factor())))
+Test <- as.data.frame(read_csv("Test.csv", col_types = cols(chas = col_factor(), 
+                                              rad = col_factor())))
+RMSE_6 <- read_csv("RMSE_5.csv")
+```
+
+```{=html}
+<center>
+<h1>Parte 7: Regresiones Locales</h1>
+</center>
+```
+## Introducción
+
+En la [parte 6](https://rpubs.com/jairoescrito/Regresiones_6) de este documento se introdujeron los modelos no lineales, mencionando las regresiones polinómicas cuadráticas de una o múltiples variables; como continuación de las regresiones no lineales se presenta uno de los métodos de regresiones no paramétricas: regresión local.
+
+En las regresiones no paramétricas no se asume un modelo particular de la relación entre la variable dependiente y las independientes. En los anteriores modelos de regresión se establecía un modelo teórico (por ejemplo el de la regresión lineal simple) con el que se pretende calcular el valor de los parámetros $\beta_i$. En este caso no se tiene ese modelo teórico inicial, esto es, no se tiene un modelo de regresión con una forma predeterminada.
+
+Si bien existen varios métodos no paramétricos, en este documento solo se desarrolla el modelo de regresión local. Modelos como Splines, Smoothing Splines y Modelo Aditivo Generalizado, entre otros, usan de parámetros específicos que requieren un desarrollo detallado para encontrar los óptimos, por ejemplo el número de knots o los grados de libertad.
+
+En R, la librería ggplot tiene la opción de agregar una línea de tendencia en un gráfico de dispersión. Generalmente para dicha línea de tendencia se tiene por defecto el método *loess,* es decir, regresión local. En las siguientes gráficas se presenta un comparativo (incluyendo una sola variable independiente) de la regresión local, la regresión cuadrática y la regresión lineal simple.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+boston <- data.frame(rbind(Train,Test))
+# Modelo con lstat
+fig_lstat <- ggplot(boston,aes(lstat,medv))+ 
+  geom_point() +
+  geom_smooth(method='lm', aes(color="Lineal")) +
+  geom_smooth(method='lm', formula = y ~ poly(x, 2), aes(color = "Cuadrática")) + 
+  geom_smooth(method='loess', aes(color = "Local"))+
+  labs(color='')
+# Modelo con rm
+fig_rm <- ggplot(boston,aes(rm,medv))+ 
+  geom_point() +
+  geom_smooth(method='lm', aes(color="Lineal")) +
+  geom_smooth(method='lm', formula = y ~ poly(x, 2), aes(color = "Cuadrática")) + 
+  geom_smooth(method='loess', aes(color = "Local")) +
+  labs(color='')
+plot_grid(fig_lstat, 
+          fig_rm,
+          nrow = 2)
+
+rm(fig_lo_lstat,
+  fig_lo_rm,
+  boston)
+```
+
+### **7.1. Regresión Local (Loess)**
+
+En R se usa la función 'loess' para generar los modelos de regresión local, esta función trabaja con dos parámetros principales: *span* y *degree*.
+
+-   **Span:** se define la proporción de observaciones que se tomarán como vecinos
+
+-   **Degree:** se establecer si a regresión con los vecinos será lineal o cuadrática
+
+Para definir los modelos de regresión local se debe establecer 1) las variables independientes a incluir, 2) la formula de 'relación' entre variables, y 3) los valores *span* y *dregree*. Cada combinación de estos puntos genera un modelo diferente, lo que abre la posibilidad a múltiples opciones de modelos de regresión local que se podrían plantear en este ejercicio. En el presente documento se trabajará con 4 modelos, cada uno tendrá en común el valor de *span* (0.2), en lo demás, se modificaran la cantidad de variables y los grados. Es muy posible que la modificación del valor *span* genere mejores resultados, sin embargo, no es posible explorar una mayor cantidad a las que se plantearán.
+
+Las configuraciones a estudiar serían:
+
+1)  Un modelo de 3 variables independientes (lstat, rm, ptratio) con un valor degree de 1.
+
+2)  Un modelo de 3 variables independientes (lstat, rm, ptratio) con un valor degree de 2.
+
+3)  Un modelo de 2 variables independientes (lstat, rm) con un valor degree de 1.
+
+4)  Un modelo de 2 variables independientes (lstat, rm) con un valor degree de 2.
+
+#### **7.1.1 Regresión Local con las variables lstat, rm, ptratio, y grado 1.**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+loess_3_1 <- loess(medv~lstat+rm+ptratio,data=Train,span = .2 ,degree = 1, normalize = FALSE)
+summary(loess_3_1)
+```
+
+Para este modelo el error estándar residual es de 4.49, muy similar a los resultados que han mostrado los modelos trabajados anteriormente. Al hacer la predicción de los valores de *medv* haciendo uso del dataset test:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p_loess_3_1 <- predict(loess_3_1,Test)
+data_reg <- data.frame(Test, Loess_3_1 = round(p_loess_3_1,2))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+data_reg <- rownames_to_column(data_reg,"Ind")
+data_reg <- arrange(data_reg,medv)
+data_reg <- rownames_to_column(data_reg,"Obs")
+data_reg$Ind <- as.numeric(data_reg$Ind)
+data_reg$Obs <- as.numeric(data_reg$Obs)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fig_loess_3_1 <- plot_ly(data = data_reg, x = ~Obs) # Definición básica de la gráfica
+fig_loess_3_1 <- fig_loess_3_1 %>% add_trace(y = ~medv, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'medv_real',
+                                           type="scatter")
+fig_loess_3_1 <- fig_loess_3_1 %>% add_trace(y = ~Loess_3_1, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'Loess_3_1',
+                                           type="scatter")
+fig_loess_3_1 <- fig_loess_3_1 %>% layout(title = list(text ='Regresión local grado 1 - variables: lstat, rm y ptratio',
+                                                        xaxis = list(title = 'Observaciones'),
+                                                        yaxis = list(title = 'medv'), 
+                                                    y = 0.98, x = 0.1))
+fig_loess_3_1
+```
+
+En términos generales se podría mencionar que el modelo de regresión local con 3 variables y de grado uno, parece tener un buen desempeño en las predicciones para los valores bajos de *medv*, no obstante, para las observaciones superiores a 60 las diferencias comienzan a ser mayores.
+
+#### **7.1.2 Regresión Local con las variables lstat, rm, ptratio, y grado 2.**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+loess_3_2 <- loess(medv~lstat+rm+ptratio,data=Train,span = .2 ,degree = 2, normalize = FALSE)
+summary(loess_3_2)
+```
+
+Para este planteamiento la única modificación, con respecto al anterior, es el grado, en este caso el modelo se establece con grado 2. El error estándar residual es 4.60 (mayor al modelo de grado 1), en principio se podría concluir que se tiene un menor desempeño en este modelo, sin embargo, este resultado se validará más adelante cuando se realicen los cálculos de RMSE. El resultado de la predicción de los valores se observa así:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p_loess_3_2 <- predict(loess_3_2,Test)
+data_reg <- arrange(data_reg,Ind)
+data_reg <- data.frame(data_reg, Loess_3_2 = round(p_loess_3_2,2))
+data_reg <- arrange(data_reg,medv)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fig_loess_3_2 <- plot_ly(data = data_reg, x = ~Obs) # Definición básica de la gráfica
+fig_loess_3_2 <- fig_loess_3_2 %>% add_trace(y = ~medv, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'medv_real',
+                                           type="scatter")
+fig_loess_3_2 <- fig_loess_3_2 %>% add_trace(y = ~Loess_3_2, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'Loess_3_2',
+                                           type="scatter")
+fig_loess_3_2 <- fig_loess_3_2 %>% layout(title = list(text ='Regresión local grado 2 - variables: lstat, rm y ptratio',
+                                                        xaxis = list(title = 'Observaciones'),
+                                                        yaxis = list(title = 'medv'), 
+                                                    y = 0.98, x = 0.1))
+fig_loess_3_2
+```
+
+Los resultados que se observan en la gráfica son muy similares al modelo grado 1: una mayor cercanía a los valores reales para las observaciones de 1 a 60 y una mayor distancia en los datos predichos de las observaciones superiores a 60.
+
+#### **7.1.3 Regresión Local con las variables lstat, rm, y grado 1.**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+loess_2_1 <- loess(medv~lstat+rm,data=Train,span = .2 ,degree = 1, normalize = FALSE)
+summary(loess_2_1)
+```
+
+Al eliminar la variable ptratio y con usar grado 1, el error estándar residual disminuye a 4.25. El resultado del modelo parece ser mejor al eliminar una variable. Ahora, al predecir los valores con el dataste Test, así se observan los resultados:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p_loess_2_1 <- predict(loess_2_1,Test)
+data_reg <- arrange(data_reg,Ind)
+data_reg <- data.frame(data_reg, Loess_2_1 = round(p_loess_2_1,2))
+data_reg <- arrange(data_reg,medv)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fig_loess_2_1 <- plot_ly(data = data_reg, x = ~Obs) # Definición básica de la gráfica
+fig_loess_2_1 <- fig_loess_2_1 %>% add_trace(y = ~medv, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'medv_real',
+                                           type="scatter")
+fig_loess_2_1 <- fig_loess_2_1 %>% add_trace(y = ~Loess_2_1, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'Loess_2_1',
+                                           type="scatter")
+fig_loess_2_1 <- fig_loess_2_1 %>% layout(title = list(text ='Regresión local grado 1 - variables: lstat y rm',
+                                                        xaxis = list(title = 'Observaciones'),
+                                                        yaxis = list(title = 'medv'), 
+                                                    y = 0.98, x = 0.1))
+fig_loess_2_1
+```
+
+Los modelos de regresión local parecen presentar la misma tendencia, se observa un buen ajuste para valores reales de medv bajos (esto es por debajo de la observación 60) y una mayor dispersión para las demás observaciones. Cabe resaltar que en este modelo, en las últimas 6 observaciones las predicciones muestran una tendencia a estar por debajo de los valores reales.
+
+#### **7.1.4 Regresión Local con las variables lstat, rm, y grado 2.**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+loess_2_2 <- loess(medv~lstat+rm,data=Train,span = .2 ,degree = 2, normalize = FALSE)
+summary(loess_2_2)
+```
+
+El último modelo de regresión local planteados muestra el menor error estándar residual, que se ubica en 4.16. Sobre este resultado se puede presumir el mejor desempeño en los resultados de la predicción, no obstante, dicha conclusión deberá ser ratificada con los resultados del RMSE. Con este modelo, los resultados de la predicción son:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p_loess_2_2 <- predict(loess_2_2,Test)
+data_reg <- arrange(data_reg,Ind)
+data_reg <- data.frame(data_reg, Loess_2_2 = round(p_loess_2_2,2))
+data_reg <- arrange(data_reg,medv)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fig_loess_2_2 <- plot_ly(data = data_reg, x = ~Obs) # Definición básica de la gráfica
+fig_loess_2_2 <- fig_loess_2_2 %>% add_trace(y = ~medv, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'medv_real',
+                                           type="scatter")
+fig_loess_2_2 <- fig_loess_2_2 %>% add_trace(y = ~Loess_2_2, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'Loess_2_2',
+                                           type="scatter")
+fig_loess_2_2 <- fig_loess_2_2 %>% layout(title = list(text ='Regresión local grado 2 - variables: lstat y rm',
+                                                        xaxis = list(title = 'Observaciones'),
+                                                        yaxis = list(title = 'medv'), 
+                                                    y = 0.98, x = 0.1))
+fig_loess_2_2
+```
+
+En este caso, los resultados de las predicciones son similares al modelo con dos variables y grado 1, es decir, la misma tendencia para las primeras observaciones y el caso de las predicciones por debajo de los datos reales para las últimas observaciones. Las diferencias en error estándar residual pueden obedecer a diferencias mínimas en grupos de observaciones y no cambios de tendencia relevantes en las predicciones.
+
+### **7.2 Comparación de los modelos de regresión local**
+
+No existen diferencias relevantes en los modelos de regresión local, es decir, la modificación del número de variables o el grado definido no es significativa en el desempeño del modelo, el error estándar residual estuvo entre 4.16 y 4.58 siendo el menor el alcanzado con el modelo de dos variables y grado 2. No se observan cambios en los resultados al modificar los grados en la regresión local mientras que si se observa una leve diferencia al momento de eliminar una de las variables (lo que resulta positivo si se tiene en cuenta que a menos variable el modelo resulta menos complejo). Los resultados gráficos para cada regresión local se observan de esta forma:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fig_loess <- plot_ly(data = data_reg, x = ~Obs) # Definición básica de la gráfica
+fig_loess <- fig_loess %>% add_trace(y = ~medv, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'medv_real',
+                                           type="scatter")
+fig_loess <- fig_loess %>% add_trace(y = ~Loess_3_1, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'Loess_3_1',
+                                           type="scatter")
+fig_loess <- fig_loess %>% add_trace(y = ~Loess_3_2, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'Loess_3_2',
+                                           type="scatter")
+fig_loess <- fig_loess %>% add_trace(y = ~Loess_2_1, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'Loess_2_1',
+                                           type="scatter")
+fig_loess <- fig_loess %>% add_trace(y = ~Loess_2_2, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'Loess_2_2',
+                                           type="scatter")
+fig_loess <- fig_loess %>% layout(title = list(text ='Regresión local',
+                                                        xaxis = list(title = 'Observaciones'),
+                                                        yaxis = list(title = 'medv'), 
+                                                    y = 0.98, x = 0.1))
+fig_loess
+```
+
+#### **7.2.1 Cálculo de RMSE**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+e_loess_3_1 <- round(rmse(data_reg$medv,data_reg$Loess_3_1),2)
+e_loess_3_2 <- round(rmse(data_reg$medv,data_reg$Loess_3_2),2)
+e_loess_2_1 <- round(rmse(data_reg$medv,data_reg$Loess_2_1),2)
+e_loess_2_2 <- round(rmse(data_reg$medv,data_reg$Loess_2_2),2)
+
+RMSE_6 <- as.data.frame(rbind(RMSE_6,e_loess_3_1,e_loess_3_2,e_loess_2_1,e_loess_2_2))
+RMSE_6[,1] <- c("01_RLS_lstat","02_RLS_rm","03_RLM_12vars"
+                ,"04_RLM_2vars","05_RLMI_2vars", "06_RLMI_3vars",
+                "07_RLMI_4vars", "08_Reg_L1", "09_Reg_L2",
+                "10_RNL2_lstat", "11_RNL2_rm", "12_RNL2_2vars",
+                "13_RNL2_3vars", "14_RNL2_2vars(2)",
+                "15_Loess_3_1", "16_Loess_3_2",
+                "17_Loess_2_1", "18_Loess_2_2")
+```
+
+Para las regresiones locales se observar valores de RMSE que están entre 3.93 y 4.53, siendo el modelo de dos variables 2 y de grado 1 el de menor RMSE. En todo caso la diferencia absoluta de los RMSE es de 600 dólares para el valor medio de las casas, esta diferencia no es significativa. En este caso, el modelo más simple (de los analizados) es el de menor error.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fig_rmse <- plot_ly(RMSE_6, x = ~Modelo, y = ~RMSE, 
+                type = "scatter", 
+                mode = "markers+lines")
+fig_rmse <- fig_rmse %>% layout(xaxis = list(tickangle=-45))
+fig_rmse
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+write_csv(RMSE_6,"RMSE_6.csv")
+```
